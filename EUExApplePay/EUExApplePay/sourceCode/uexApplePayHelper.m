@@ -23,17 +23,6 @@
 
 #import "uexApplePayHelper.h"
 
-#define UEX_DICT_CONTAIN_STRING_VALUE(dict,key) \
-    (dict[key] && [dict[key] isKindOfClass:[NSString class]])
-
-#define UEX_DICT_CONTAIN_ARRAY_VALUE(dict,key) \
-    (dict[key] && [dict[key] isKindOfClass:[NSArray class]])
-
-#define UEX_DICT_CONTAIN_DICTIONARY_VALUE(dict,key) \
-    (dict[key] && [dict[key] isKindOfClass:[NSDictionary class]])
-
-#define UEX_STRING_VALUE_FOR_KEY(dict,key,defaultValue)\
-    (UEX_DICT_CONTAIN_STRING_VALUE(dict,key) ? dict[key] : defaultValue)
 
 
 NSString *const kUexApplePayMerchantIdentifierKey = @"merchantIdentifier";

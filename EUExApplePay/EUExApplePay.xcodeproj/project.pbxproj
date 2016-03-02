@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		42C1BACE1C7DB3E000809D9C /* EUExApplePay.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BACD1C7DB3E000809D9C /* EUExApplePay.m */; };
+		4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4253F02B1C852521004543AD /* libUPAPayPlugin.a */; };
+		42C1BACE1C7DB3E000809D9C /* EUExApplePay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */; };
 		42C1BAE71C7E9E3000809D9C /* uexApplePayHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */; };
 		42C1BAEA1C7FD84A00809D9C /* uexApplePayQueueLock.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BAE91C7FD84A00809D9C /* uexApplePayQueueLock.m */; };
 /* End PBXBuildFile section */
@@ -29,8 +30,11 @@
 		1ADBD9087B09A8C4C4C565AC /* SBJsonParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJsonParser.h; sourceTree = "<group>"; };
 		304C025BEDDEF95D2CFEDC2C /* SBJsonWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJsonWriter.h; sourceTree = "<group>"; };
 		4253EFFF1C814BE0004543AD /* libuexApplePay.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libuexApplePay.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4253F02B1C852521004543AD /* libUPAPayPlugin.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libUPAPayPlugin.a; sourceTree = "<group>"; };
+		4253F02D1C85252A004543AD /* UPAPayPlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPlugin.h; sourceTree = "<group>"; };
+		4253F02E1C85252A004543AD /* UPAPayPluginDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPluginDelegate.h; sourceTree = "<group>"; };
 		42C1BACC1C7DB3E000809D9C /* EUExApplePay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUExApplePay.h; sourceTree = "<group>"; };
-		42C1BACD1C7DB3E000809D9C /* EUExApplePay.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EUExApplePay.m; sourceTree = "<group>"; };
+		42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = EUExApplePay.mm; sourceTree = "<group>"; };
 		42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexApplePayHelper.h; sourceTree = "<group>"; };
 		42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = uexApplePayHelper.m; sourceTree = "<group>"; };
 		42C1BAE81C7FD84A00809D9C /* uexApplePayQueueLock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexApplePayQueueLock.h; sourceTree = "<group>"; };
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,9 +71,20 @@
 			);
 			sourceTree = "<group>";
 		};
+		4253F02A1C852517004543AD /* UPApplePay */ = {
+			isa = PBXGroup;
+			children = (
+				4253F02D1C85252A004543AD /* UPAPayPlugin.h */,
+				4253F02E1C85252A004543AD /* UPAPayPluginDelegate.h */,
+				4253F02B1C852521004543AD /* libUPAPayPlugin.a */,
+			);
+			path = UPApplePay;
+			sourceTree = "<group>";
+		};
 		507942AC74B4A12935C1299C /* JSON */ = {
 			isa = PBXGroup;
 			children = (
+				60A5A207FB53AAB60711D149 /* engineHeader */,
 				C9744478860AB40E071652C1 /* JSON.h */,
 				07C47600977650E9CB3EAFE7 /* JSONParser.h */,
 				F7443A85F5F6E2ACECB5FFFA /* MD5Digest.h */,
@@ -90,16 +106,16 @@
 				525E1B7C0E7362B0D1A81E93 /* EUExBase.h */,
 				D89FADAE9D124E02B977915A /* EUExBaseDefine.h */,
 			);
-			path = engineHeader;
+			name = engineHeader;
+			path = ../../engineHeader;
 			sourceTree = "<group>";
 		};
 		6D5C281B5E92477BA962CB85 /* EUExApplePay */ = {
 			isa = PBXGroup;
 			children = (
-				60A5A207FB53AAB60711D149 /* engineHeader */,
 				A0B5CFBC5BB7D59067914687 /* sourceCode */,
 				42C1BACC1C7DB3E000809D9C /* EUExApplePay.h */,
-				42C1BACD1C7DB3E000809D9C /* EUExApplePay.m */,
+				42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */,
 			);
 			path = EUExApplePay;
 			sourceTree = "<group>";
@@ -107,6 +123,7 @@
 		A0B5CFBC5BB7D59067914687 /* sourceCode */ = {
 			isa = PBXGroup;
 			children = (
+				4253F02A1C852517004543AD /* UPApplePay */,
 				507942AC74B4A12935C1299C /* JSON */,
 				42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */,
 				42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */,
@@ -174,7 +191,7 @@
 			files = (
 				42C1BAE71C7E9E3000809D9C /* uexApplePayHelper.m in Sources */,
 				42C1BAEA1C7FD84A00809D9C /* uexApplePayQueueLock.m in Sources */,
-				42C1BACE1C7DB3E000809D9C /* EUExApplePay.m in Sources */,
+				42C1BACE1C7DB3E000809D9C /* EUExApplePay.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +282,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CONFIGURATION_BUILD_DIR = "$(SRCROOT)/uexApplePay";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExApplePay/sourceCode/UPApplePay",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = uexApplePay;
 				SKIP_INSTALL = YES;
@@ -275,6 +296,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CONFIGURATION_BUILD_DIR = "$(SRCROOT)/uexApplePay";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExApplePay/sourceCode/UPApplePay",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = uexApplePay;
 				SKIP_INSTALL = YES;
