@@ -38,7 +38,11 @@ typedef NS_ENUM(NSInteger,uexApplePayStartPayResult){
     uexApplePayStartPayResultUnknownError,
 };
 
-
+typedef NS_ENUM(NSInteger,uexApplePayOnPayFinishResult){
+    uexApplePayOnPayFinishResultSuccess = 0,
+    uexApplePayOnPayFinishResultFailure,
+    uexApplePayOnPayFinishResultCancel,
+};
 
 @interface EUExApplePay()<PKPaymentAuthorizationViewControllerDelegate,UPAPayPluginDelegate>
 
@@ -48,6 +52,7 @@ typedef NS_ENUM(NSInteger,uexApplePayStartPayResult){
 @property (nonatomic,assign) PKPaymentAuthorizationStatus status;
 @property (nonatomic,assign) BOOL isPostalAddressInvalid;
 @property (nonatomic,strong) NSMutableDictionary<NSString *,PKPaymentButton *> *buttons;
+@property (nonatomic,assign) uexApplePayOnPayFinishResult payResult;
 @end
 
 NSString * kUexApplePayOrderInfoKey = @"orderInfo";
@@ -93,6 +98,7 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
     self.shippingMethods = nil;
     self.status = PKPaymentAuthorizationStatusSuccess;
     self.isPostalAddressInvalid = NO;
+    self.payResult = uexApplePayOnPayFinishResultCancel;
 }
 
 - (void)dealloc{
@@ -213,7 +219,14 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
         return [self cbCommitWithResult:NO commitType:type];
     }
     BOOL isPaymentSuccess = [info[kUexApplePayResultKey] boolValue];
-    self.status = isPaymentSuccess ? PKPaymentAuthorizationStatusSuccess : PKPaymentAuthorizationStatusFailure;
+    if (isPaymentSuccess) {
+        self.status = PKPaymentAuthorizationStatusSuccess;
+        self.payResult = uexApplePayOnPayFinishResultSuccess;
+    }else{
+        self.status = PKPaymentAuthorizationStatusFailure;
+        self.payResult = uexApplePayOnPayFinishResultFailure;
+    }
+
     return [self cbCommitWithResult:YES commitType:uexApplePayCommitAuthorizedResult];
     
 }
@@ -425,8 +438,9 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 }
 - (void)paymentAuthorizationViewControllerDidFinish:(PKPaymentAuthorizationViewController *)controller{
     [controller dismissViewControllerAnimated:YES completion:^{
+        
+        [self callbackJSONWithFunction:@"onPayFinish" object:@{@"result":@(self.payResult)}];
         [self reset];
-        [self callbackJSONWithFunction:@"onPayFinish" object:nil];
     }];
      
 }
