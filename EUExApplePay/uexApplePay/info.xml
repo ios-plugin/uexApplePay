@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <uexplugins>
     <plugin
-        uexName="uexApplePay" version="3.0.0" build="0">
-        <info>0:uexApplePay for iOS</info>
+        uexName="uexApplePay" version="4.0.0" build="1">
+        <info>1:支持4.0引擎</info>
+        <build>0:uexApplePay for iOS</build>
     </plugin>
 </uexplugins>

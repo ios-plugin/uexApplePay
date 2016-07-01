@@ -1,10 +1,10 @@
 /**
  *
- *	@file   	: EUExApplePay.h  in EUExApplePay Project .
+ *	@file   	: AppCanGlobalObjectGetter.h  in AppCanKit
  *
- *	@author 	: CeriNo.
+ *	@author 	: CeriNo 
  * 
- *	@date   	: Created on 16/2/24.
+ *	@date   	: Created on 16/5/31.
  *
  *	@copyright 	: 2016 The AppCan Open Source Project.
  *
@@ -20,9 +20,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+ 
 #import <Foundation/Foundation.h>
-#import <AppCanKit/AppCanKit.h>
-@interface EUExApplePay : EUExBase
+
+@protocol AppCanGlobalObjectGetter <NSObject>
+
+- (id<AppCanWebViewEngineObject>)getAppCanRootWebViewEngine;
+- (id<AppCanWidgetObject>)getAppCanMainWidget;
 
 @end

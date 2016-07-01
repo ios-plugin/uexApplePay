@@ -1,10 +1,10 @@
 /**
  *
- *	@file   	: uexApplePayQueueLock.h  in EUExApplePay Project .
+ *	@file   	: ACNil.h  in AppCanKit
  *
- *	@author 	: CeriNo.
- * 
- *	@date   	: Created on 16/2/26.
+ *	@author 	: CeriNo
+ *
+ *	@date   	: Created on 16/5/25.
  *
  *	@copyright 	: 2016 The AppCan Open Source Project.
  *
@@ -23,14 +23,13 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ *  NSNull的替代品
+ *  不会导致unrecogized selector崩溃
+ */
+@interface ACNil : NSProxy
 
-@interface uexApplePayQueueLock : NSObject
 
-- (instancetype)initWithIdentifier:(NSString *)identifier;
-
-- (void)lock;
-- (void)unlock;
-- (void)reset;
-- (void)addTask:(dispatch_block_t)taskBlock;
++ (instancetype)null;
 
 @end
