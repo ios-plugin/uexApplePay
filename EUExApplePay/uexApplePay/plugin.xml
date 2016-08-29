@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <uexplugins>
     <plugin name="uexApplePay">
-         <method name="test" sync="true"></method>
-         <method name="canMakePayment" sync="true"></method>
-         <method name="startPay" sync="true"></method>
-         <method name="commitShippingMethodChange" sync="true"></method>
-         <method name="commitShippingContactChange" sync="true"></method>
-         <method name="commitPaymentMethodChange" sync="true"></method>
-         <method name="commitAuthorizedResult" sync="true"></method>
-         <method name="startChinaUnionPay" sync="true"></method>
-         <method name="addButton" sync="true"></method>
-         <method name="removeButton" sync="true"></method>
+         <method name="canMakePayment"></method>
+         <method name="startPay"></method>
+         <method name="commitShippingMethodChange"></method>
+         <method name="commitShippingContactChange"></method>
+         <method name="commitPaymentMethodChange"></method>
+         <method name="commitAuthorizedResult"></method>
+         <method name="startChinaUnionPay"></method>
+         <method name="addButton"></method>
+         <method name="removeButton"></method>
     </plugin>
 </uexplugins>
