@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4250787E1D251C6F003B6ECF /* AppCanKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4250787D1D251C6F003B6ECF /* AppCanKit.framework */; };
 		4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4253F02B1C852521004543AD /* libUPAPayPlugin.a */; };
+		427B144C1D74315F00FF0024 /* AppCanKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 427B144B1D74315F00FF0024 /* AppCanKit.framework */; };
 		42C1BACE1C7DB3E000809D9C /* EUExApplePay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */; };
 		42C1BAE71C7E9E3000809D9C /* uexApplePayHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */; };
 /* End PBXBuildFile section */
@@ -26,11 +26,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4250787D1D251C6F003B6ECF /* AppCanKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppCanKit.framework; sourceTree = "<group>"; };
 		4253EFFF1C814BE0004543AD /* libuexApplePay.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libuexApplePay.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4253F02B1C852521004543AD /* libUPAPayPlugin.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libUPAPayPlugin.a; sourceTree = "<group>"; };
 		4253F02D1C85252A004543AD /* UPAPayPlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPlugin.h; sourceTree = "<group>"; };
 		4253F02E1C85252A004543AD /* UPAPayPluginDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPluginDelegate.h; sourceTree = "<group>"; };
+		427B144B1D74315F00FF0024 /* AppCanKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppCanKit.framework; sourceTree = "<group>"; };
 		42C1BACC1C7DB3E000809D9C /* EUExApplePay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUExApplePay.h; sourceTree = "<group>"; };
 		42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = EUExApplePay.mm; sourceTree = "<group>"; };
 		42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexApplePayHelper.h; sourceTree = "<group>"; };
@@ -42,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4250787E1D251C6F003B6ECF /* AppCanKit.framework in Frameworks */,
+				427B144C1D74315F00FF0024 /* AppCanKit.framework in Frameworks */,
 				4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -81,7 +81,7 @@
 		A0B5CFBC5BB7D59067914687 /* sourceCode */ = {
 			isa = PBXGroup;
 			children = (
-				4250787D1D251C6F003B6ECF /* AppCanKit.framework */,
+				427B144B1D74315F00FF0024 /* AppCanKit.framework */,
 				4253F02A1C852517004543AD /* UPApplePay */,
 				42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */,
 				42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */,

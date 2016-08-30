@@ -170,9 +170,10 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
     NSString *mode = stringArg(info[kUexApplePayModeKey]);
     NSString *merchant = stringArg(info[kUexApplePayMerchantIdentifierKey]);
     
-    if (!orderInfo || !mode || !merchant) {
-        return @(result);
-    }
+    UEX_PARAM_GUARD_NOT_NIL(orderInfo,@(result));
+    UEX_PARAM_GUARD_NOT_NIL(mode,@(result));
+    UEX_PARAM_GUARD_NOT_NIL(merchant,@(result));
+
 
     BOOL isSuccess = [UPAPayPlugin startPay:orderInfo mode:mode viewController:[self.webViewEngine viewController] delegate:self andAPMechantID:merchant];
     if (isSuccess) {
@@ -238,19 +239,19 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
 }
 
 
-- (NSNumber *)commitAuthorizedResult:(NSMutableArray *)inArguments{
+- (UEX_BOOL)commitAuthorizedResult:(NSMutableArray *)inArguments{
     __block BOOL result = NO;
-    ACArgsUnpack(NSDictionary *info) = inArguments;
+    
     @onExit{
         if (!result) {
             [self onCommitErrorWithType:uexApplePayCommitAuthorizedResult];
         }
     };
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    NSNumber *authorizedResult = numberArg(info[kUexApplePayResultKey]);
+    UEX_PARAM_GUARD_NOT_NIL(authorizedResult,UEX_FALSE);
     
-    if (!info || !info[kUexApplePayResultKey]) {
-        return @(result);
-    }
-    BOOL isPaymentSuccess = [info[kUexApplePayResultKey] boolValue];
+    BOOL isPaymentSuccess = [authorizedResult boolValue];
     PKPaymentAuthorizationStatus status;
     if (isPaymentSuccess) {
         status = PKPaymentAuthorizationStatusSuccess;
@@ -259,13 +260,14 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
         status = PKPaymentAuthorizationStatusFailure;
         self.payResult = uexApplePayOnPayFinishResultFailure;
     }
+    
     self.onAuthorizationHandler(status);
     self.onAuthorizationHandler = nil;
     result = YES;
-    return @(result);
+    return UEX_TRUE;
 }
 
-- (NSNumber *)commitPaymentMethodChange:(NSMutableArray *)inArguments{
+- (UEX_BOOL)commitPaymentMethodChange:(NSMutableArray *)inArguments{
     __block BOOL result = NO;
     ACArgsUnpack(NSDictionary *info) = inArguments;
     @onExit{
@@ -275,20 +277,17 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
     };
     
     if (info && info[kUexApplePayPaymentKey]) {
-         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return @(result);
-        }
+        NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
     }
     result = YES;
     self.didSelectPaymentMethodHandler(self.items);
     self.didSelectPaymentMethodHandler = nil;
-    return @(result);
+    return UEX_TRUE;
 }
 
-- (NSNumber *)commitShippingMethodChange:(NSMutableArray *)inArguments{
+- (UEX_BOOL)commitShippingMethodChange:(NSMutableArray *)inArguments{
     
     __block BOOL result = NO;
     ACArgsUnpack(NSDictionary *info) = inArguments;
@@ -300,16 +299,13 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
     
     if (info && info[kUexApplePayPaymentKey]) {
         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return @(result);
-        }
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
     }
     result = YES;
     self.didSelectShippingMethodHandler(PKPaymentAuthorizationStatusSuccess,self.items);
     self.didSelectShippingMethodHandler = nil;
-    return @(result);
+    return UEX_TRUE;
 }
 
 - (NSNumber *)commitShippingContactChange:(NSMutableArray *)inArguments{
@@ -328,30 +324,25 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
     
     if (info[kUexApplePayPaymentKey]) {
         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return @(result);
-        }
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
     }
     if (info[kUexApplePayShippingMethodsKey]) {
         NSArray<PKShippingMethod *> *shippingMethods = [uexApplePayHelper shippingMethodsWithInfoDictionary:info];
-        if (shippingMethods) {
-            self.shippingMethods = shippingMethods;
-        }else{
-            return @(result);
-        }
+        UEX_PARAM_GUARD_NOT_NIL(shippingMethods,UEX_FALSE);
+        self.shippingMethods = shippingMethods;
+
     }
     result = YES;
     self.didSelectShippingContactHandler(status,self.shippingMethods,self.items);
     self.didSelectShippingContactHandler = nil;
-    return @(result);
+    return UEX_TRUE;
 }
 
 
 #pragma mark - Apple Pay Button
 
-- (NSNumber *)addButton:(NSMutableArray *)inArguments{
+- (UEX_BOOL)addButton:(NSMutableArray *)inArguments{
     __block BOOL result = NO;
     __block NSString *identifier = nil;
     @onExit{
@@ -362,26 +353,24 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
 
     };
     ACArgsUnpack(NSDictionary *info) = inArguments;
-    if (!info) {
-        return @(result);
-    }
     identifier = stringArg(info[@"id"]);
-    NSNumber *widthNum = numberArg(info[@"width"]);
-    NSNumber *heightNum = numberArg(info[@"height"]);
-    NSNumber *xNum = numberArg(info[@"x"]);
-    NSNumber *yNum = numberArg(info[@"y"]);
-    
-    if (!identifier || !widthNum || !heightNum || !xNum || !yNum) {
-        return @(result);
-    }
-    
+    NSNumber *width = numberArg(info[@"width"]);
+    NSNumber *height = numberArg(info[@"height"]);
+    NSNumber *x = numberArg(info[@"x"]);
+    NSNumber *y = numberArg(info[@"y"]);
+    UEX_PARAM_GUARD_NOT_NIL(identifier,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(width,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(height,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(x,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(y,UEX_FALSE);
     if ([self.buttons.allKeys containsObject:identifier]) {
-        return @(result);
+        ACLogDebug(@"id already used!");
+        return UEX_FALSE;
     }
     PKPaymentButtonType type = (PKPaymentButtonType)(info[@"type"] ? [info[@"type"] integerValue] : PKPaymentButtonTypePlain);
     PKPaymentButtonStyle style = (PKPaymentButtonStyle)(info[@"style"] ? [info[@"style"] integerValue] : PKPaymentButtonStyleBlack);
     PKPaymentButton *button = [PKPaymentButton buttonWithType:type style:style];
-    button.frame = CGRectMake(xNum.floatValue, yNum.floatValue, widthNum.floatValue, heightNum.floatValue);
+    button.frame = CGRectMake(x.floatValue, y.floatValue, width.floatValue, height.floatValue);
     [self.buttons setValue:button forKey:identifier];
     [button addTarget:self action:@selector(onButtonClick:) forControlEvents:UIControlEventTouchUpInside];
     BOOL isScroll = info[@"scrollWithWeb"] ? [info[@"scrollWithWeb"] boolValue] : NO;
@@ -393,11 +382,11 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
 
     }
     result = YES;
-    return @(result);
+    return UEX_TRUE;
 }
 
 
-- (NSNumber *)removeButton:(NSMutableArray *)inArguments{
+- (UEX_BOOL)removeButton:(NSMutableArray *)inArguments{
     
     __block BOOL result = NO;
     __block NSString *identifier = nil;
@@ -411,14 +400,12 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
     
     ACArgsUnpack(NSDictionary *info) = inArguments;
     identifier = stringArg(info[@"id"]);
-    if (!identifier || !self.buttons[identifier]) {
-        return @(result);
-    }
+    UEX_PARAM_GUARD_NOT_NIL(identifier,UEX_FALSE);
     PKPaymentButton *button = self.buttons[identifier];
     [button removeFromSuperview];
     [self.buttons removeObjectForKey:identifier];
     result = YES;
-    return @(result);
+    return UEX_TRUE;
 }
 
 

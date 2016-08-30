@@ -22,7 +22,7 @@
  */
 
 #import "uexApplePayHelper.h"
-
+#import <AppCanKit/AppCanKit.h>
 
 
 NSString *const kUexApplePayMerchantIdentifierKey = @"merchantIdentifier";
@@ -54,18 +54,17 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
     if (!request) {
         return nil;
     }
-    request.currencyCode = UEX_STRING_VALUE_FOR_KEY(info, kUexApplePayCurrencyCodeKey, @"CNY");
-    request.countryCode = UEX_STRING_VALUE_FOR_KEY(info, kUexApplePayCountryCodeKey, @"CN");
+    request.currencyCode = stringArg(info[kUexApplePayCurrencyCodeKey]) ?: @"CNY";
+    request.countryCode = stringArg(info[kUexApplePayCountryCodeKey]) ?: @"CN";
     request.supportedNetworks = [self paymentNetworksWithInfoDictionary:info];
     request.merchantCapabilities = [self getMerchantCapabilityFromDict:info forKey:kUexApplePayMerchantCapabilityKey];
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(info, kUexApplePayMerchantIdentifierKey)) {
-        return nil;
-    }
-    request.merchantIdentifier = info[kUexApplePayMerchantIdentifierKey];
+
+    request.merchantIdentifier = stringArg(info[kUexApplePayMerchantIdentifierKey]);
+    UEX_PARAM_GUARD_NOT_NIL(request.merchantIdentifier,nil);
+    
     NSArray<PKPaymentSummaryItem *> *items = [self itemsWithInfoDictionary:info];
-    if (!items) {
-        return nil;
-    }
+    UEX_PARAM_GUARD_NOT_NIL(items,nil);
+    
     request.paymentSummaryItems = items;
 
     NSArray<PKShippingMethod *> *shippingMethods = [self shippingMethodsWithInfoDictionary:info];
@@ -75,46 +74,41 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
     }
     request.requiredShippingAddressFields = [self getAddressFieldFromDict:info forKey:kUexApplePayShippingContactRequiredFlagKey];
     request.requiredBillingAddressFields = [self getAddressFieldFromDict:info forKey:kUexApplePayBillingContactRequiredFlagKey];
-    if (UEX_DICT_CONTAIN_STRING_VALUE(info, @"applicationData")) {
-        request.applicationData = [info[@"applicationData"] dataUsingEncoding:NSUTF8StringEncoding];
-    }
+    
+    request.applicationData = [stringArg(info[@"applicationData"]) dataUsingEncoding:NSUTF8StringEncoding];
     return request;
 }
 
 + (NSArray<PKShippingMethod *> *)shippingMethodsWithInfoDictionary:(NSDictionary *)info{
     NSMutableArray *methods = [NSMutableArray array];
-    if (!UEX_DICT_CONTAIN_ARRAY_VALUE(info,kUexApplePayShippingMethodsKey)) {
+    NSArray *methodsArray = arrayArg(info[kUexApplePayShippingMethodsKey]);
+    if (!methodsArray) {
         return nil;
     }
-    NSArray *methodsArray = info[kUexApplePayShippingMethodsKey];
     for (NSInteger i = 0; i < methodsArray.count; i++) {
         PKShippingMethod *method = [self getShippingMethodFromDict:methodsArray[i]];
         if (method) {
             [methods addObject:method];
         }
     }
-    if (!methods || methods.count == 0) {
+    if (methods.count == 0) {
         return nil;
     }
     return methods;
 }
 
 + (NSArray<PKPaymentSummaryItem *> *)itemsWithInfoDictionary:(NSDictionary *)info{
-    if (!UEX_DICT_CONTAIN_DICTIONARY_VALUE(info, kUexApplePayPaymentKey)) {
+    NSDictionary *paymentDict = dictionaryArg(info[kUexApplePayPaymentKey]);
+    NSString *payee = stringArg(paymentDict[kUexApplePayPayeeKey]);
+    if (!payee) {
         return nil;
     }
-    NSDictionary *paymentDict = info[kUexApplePayPaymentKey];
-    
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(paymentDict, kUexApplePayPayeeKey)) {
-        return nil;
-    }
-    NSString *payee = paymentDict[kUexApplePayPayeeKey];
     NSDecimalNumber *totalPrice = [NSDecimalNumber zero];
     NSMutableArray<PKPaymentSummaryItem *> *items = [NSMutableArray array];
-    if (UEX_DICT_CONTAIN_ARRAY_VALUE(paymentDict, kUexApplePayItemsKey)) {
-        NSArray *itemArray = paymentDict[kUexApplePayItemsKey];
-        for (NSInteger i = 0; i < itemArray.count ; i++) {
-            PKPaymentSummaryItem *aItem = [self getItemFromDict:itemArray[i]];
+    NSArray *itemDataArray = arrayArg(paymentDict[kUexApplePayItemsKey]);
+    if (itemDataArray) {
+        for (NSInteger i = 0; i < itemDataArray.count ; i++) {
+            PKPaymentSummaryItem *aItem = [self getItemFromDict:itemDataArray[i]];
             if (aItem) {
                 totalPrice = [totalPrice decimalNumberByAdding:aItem.amount];
                 [items addObject:aItem];
@@ -132,15 +126,17 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
 }
 
 + (NSArray *)paymentNetworksWithInfoDictionary:(NSDictionary *)info{
-    if(!info ||
-       ![info isKindOfClass:[NSDictionary class]] ||
-       !UEX_DICT_CONTAIN_ARRAY_VALUE(info, kUexApplePayNetworksKey)){
+    if(!info || ![info isKindOfClass:[NSDictionary class]]){
+        return [[self availablePKPaymentNetworks] allValues];
+    }
+    NSArray *networks = arrayArg(info[kUexApplePayNetworksKey]);
+    if (!networks) {
         return [[self availablePKPaymentNetworks] allValues];
     }
     NSMutableArray *array = [NSMutableArray array];
-    for (int i = 0; i < [info[kUexApplePayNetworksKey] count]; i++) {
-        NSString *network = info[kUexApplePayNetworksKey][i];
-        if (![network isKindOfClass:[NSString class]]) {
+    for (int i = 0; i < [networks count]; i++) {
+        NSString *network = stringArg(networks[i]);
+        if (!networks) {
             continue;
         }
         network = [network stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].lowercaseString;
@@ -200,10 +196,11 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
     if (!dict || ![dict isKindOfClass:[NSDictionary class]]) {
         return nil;
     }
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(dict, kUexApplePayLabelKey)) {
+
+    NSString *label = stringArg(dict[kUexApplePayLabelKey]);
+    if (!label) {
         return nil;
     }
-    NSString *label = dict[kUexApplePayLabelKey];
     NSDecimalNumber *price = [NSDecimalNumber zero];
     PKPaymentSummaryItemType type = PKPaymentSummaryItemTypePending;
     if (dict[kUexApplePayPriceKey]) {
@@ -218,15 +215,16 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
         return nil;
     }
     PKShippingMethod *method = [[PKShippingMethod alloc]init];
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(dict, kUexApplePayIdentifierKey) ||
-        !dict[kUexApplePayPriceKey] ||
-        !UEX_DICT_CONTAIN_STRING_VALUE(dict, kUexApplePayLabelKey)) {
+    NSString *identifier = stringArg(dict[kUexApplePayIdentifierKey]);
+    NSString *label = stringArg(dict[kUexApplePayLabelKey]);
+    if (!identifier || !label || !dict[kUexApplePayPriceKey]) {
         return nil;
     }
-    method.identifier = dict[kUexApplePayIdentifierKey];
+
+    method.identifier = identifier;
     method.amount = [self priceFromValue:dict[kUexApplePayPriceKey]];
-    method.label = dict[kUexApplePayLabelKey];
-    method.detail = dict[kUexApplePayDetailKey];
+    method.label = label;
+    method.detail = stringArg(dict[kUexApplePayDetailKey]);
     return method;
 }
 
@@ -239,7 +237,6 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
         price = [NSDecimalNumber decimalNumberWithString:[value stringValue]];
     }
     return price;
-                 
 }
 
 
@@ -252,7 +249,7 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
         [allNetWorks setValue:PKPaymentNetworkAmex forKey:@"amex"];
         [allNetWorks setValue:PKPaymentNetworkMasterCard forKey:@"mastercard"];
         [allNetWorks setValue:PKPaymentNetworkVisa forKey:@"visa"];
-        if (iOS9_2) {
+        if (ACSystemVersion() >= 9.2) {
             [allNetWorks setValue:PKPaymentNetworkDiscover forKey:@"discover"];
             [allNetWorks setValue:PKPaymentNetworkChinaUnionPay forKey:@"chinaunionpay"];
             [allNetWorks setValue:PKPaymentNetworkPrivateLabel forKey:@"privatelabel"];
@@ -267,7 +264,7 @@ NSString *const kUexApplePayMerchantCapabilityKey = @"merchantCapability";
 
 
 + (uexApplePayStatus)payStatusWithInfo:(NSDictionary *)info{
-    if (!iOS9_2) {
+    if (ACSystemVersion() < 9.2) {
         return uexApplePayStatusSystemNotSupport;
     }
     if (![PKPaymentAuthorizationViewController canMakePayments]) {
