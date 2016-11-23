@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4253F02B1C852521004543AD /* libUPAPayPlugin.a */; };
+		427B144C1D74315F00FF0024 /* AppCanKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 427B144B1D74315F00FF0024 /* AppCanKit.framework */; };
 		42C1BACE1C7DB3E000809D9C /* EUExApplePay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */; };
 		42C1BAE71C7E9E3000809D9C /* uexApplePayHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */; };
-		42C1BAEA1C7FD84A00809D9C /* uexApplePayQueueLock.m in Sources */ = {isa = PBXBuildFile; fileRef = 42C1BAE91C7FD84A00809D9C /* uexApplePayQueueLock.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,29 +26,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		07C47600977650E9CB3EAFE7 /* JSONParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONParser.h; sourceTree = "<group>"; };
-		1ADBD9087B09A8C4C4C565AC /* SBJsonParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJsonParser.h; sourceTree = "<group>"; };
-		304C025BEDDEF95D2CFEDC2C /* SBJsonWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJsonWriter.h; sourceTree = "<group>"; };
 		4253EFFF1C814BE0004543AD /* libuexApplePay.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libuexApplePay.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4253F02B1C852521004543AD /* libUPAPayPlugin.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libUPAPayPlugin.a; sourceTree = "<group>"; };
 		4253F02D1C85252A004543AD /* UPAPayPlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPlugin.h; sourceTree = "<group>"; };
 		4253F02E1C85252A004543AD /* UPAPayPluginDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UPAPayPluginDelegate.h; sourceTree = "<group>"; };
+		427B144B1D74315F00FF0024 /* AppCanKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppCanKit.framework; sourceTree = "<group>"; };
 		42C1BACC1C7DB3E000809D9C /* EUExApplePay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUExApplePay.h; sourceTree = "<group>"; };
 		42C1BACD1C7DB3E000809D9C /* EUExApplePay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = EUExApplePay.mm; sourceTree = "<group>"; };
 		42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexApplePayHelper.h; sourceTree = "<group>"; };
 		42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = uexApplePayHelper.m; sourceTree = "<group>"; };
-		42C1BAE81C7FD84A00809D9C /* uexApplePayQueueLock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = uexApplePayQueueLock.h; sourceTree = "<group>"; };
-		42C1BAE91C7FD84A00809D9C /* uexApplePayQueueLock.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = uexApplePayQueueLock.m; sourceTree = "<group>"; };
-		46A9057377DF35D790B05BB8 /* SBJSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJSON.h; sourceTree = "<group>"; };
-		525E1B7C0E7362B0D1A81E93 /* EUExBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUExBase.h; sourceTree = "<group>"; };
-		546FDB6DF6F7B8EAC1FF9BE6 /* NSString+SBJSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+SBJSON.h"; sourceTree = "<group>"; };
-		78AC985724B4973BC9FED511 /* EUtility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUtility.h; sourceTree = "<group>"; };
-		875D503F2FABF6E1176F5E91 /* NSObject+SBJSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+SBJSON.h"; sourceTree = "<group>"; };
-		89753D62EABAAAD51C19669C /* EUExBase+Bundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "EUExBase+Bundle.h"; sourceTree = "<group>"; };
-		AA901FA37C694F88FC37BC07 /* SBJsonBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJsonBase.h; sourceTree = "<group>"; };
-		C9744478860AB40E071652C1 /* JSON.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSON.h; sourceTree = "<group>"; };
-		D89FADAE9D124E02B977915A /* EUExBaseDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EUExBaseDefine.h; sourceTree = "<group>"; };
-		F7443A85F5F6E2ACECB5FFFA /* MD5Digest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MD5Digest.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				427B144C1D74315F00FF0024 /* AppCanKit.framework in Frameworks */,
 				4253F02C1C852521004543AD /* libUPAPayPlugin.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -81,35 +68,6 @@
 			path = UPApplePay;
 			sourceTree = "<group>";
 		};
-		507942AC74B4A12935C1299C /* JSON */ = {
-			isa = PBXGroup;
-			children = (
-				60A5A207FB53AAB60711D149 /* engineHeader */,
-				C9744478860AB40E071652C1 /* JSON.h */,
-				07C47600977650E9CB3EAFE7 /* JSONParser.h */,
-				F7443A85F5F6E2ACECB5FFFA /* MD5Digest.h */,
-				875D503F2FABF6E1176F5E91 /* NSObject+SBJSON.h */,
-				546FDB6DF6F7B8EAC1FF9BE6 /* NSString+SBJSON.h */,
-				46A9057377DF35D790B05BB8 /* SBJSON.h */,
-				AA901FA37C694F88FC37BC07 /* SBJsonBase.h */,
-				1ADBD9087B09A8C4C4C565AC /* SBJsonParser.h */,
-				304C025BEDDEF95D2CFEDC2C /* SBJsonWriter.h */,
-			);
-			path = JSON;
-			sourceTree = "<group>";
-		};
-		60A5A207FB53AAB60711D149 /* engineHeader */ = {
-			isa = PBXGroup;
-			children = (
-				78AC985724B4973BC9FED511 /* EUtility.h */,
-				89753D62EABAAAD51C19669C /* EUExBase+Bundle.h */,
-				525E1B7C0E7362B0D1A81E93 /* EUExBase.h */,
-				D89FADAE9D124E02B977915A /* EUExBaseDefine.h */,
-			);
-			name = engineHeader;
-			path = ../../engineHeader;
-			sourceTree = "<group>";
-		};
 		6D5C281B5E92477BA962CB85 /* EUExApplePay */ = {
 			isa = PBXGroup;
 			children = (
@@ -123,12 +81,10 @@
 		A0B5CFBC5BB7D59067914687 /* sourceCode */ = {
 			isa = PBXGroup;
 			children = (
+				427B144B1D74315F00FF0024 /* AppCanKit.framework */,
 				4253F02A1C852517004543AD /* UPApplePay */,
-				507942AC74B4A12935C1299C /* JSON */,
 				42C1BAE51C7E9E3000809D9C /* uexApplePayHelper.h */,
 				42C1BAE61C7E9E3000809D9C /* uexApplePayHelper.m */,
-				42C1BAE81C7FD84A00809D9C /* uexApplePayQueueLock.h */,
-				42C1BAE91C7FD84A00809D9C /* uexApplePayQueueLock.m */,
 			);
 			path = sourceCode;
 			sourceTree = "<group>";
@@ -190,7 +146,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				42C1BAE71C7E9E3000809D9C /* uexApplePayHelper.m in Sources */,
-				42C1BAEA1C7FD84A00809D9C /* uexApplePayQueueLock.m in Sources */,
 				42C1BACE1C7DB3E000809D9C /* EUExApplePay.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -234,7 +189,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -271,7 +226,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
@@ -282,6 +237,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CONFIGURATION_BUILD_DIR = "$(SRCROOT)/uexApplePay";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExApplePay/sourceCode",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/EUExApplePay/sourceCode/UPApplePay",
@@ -296,6 +255,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CONFIGURATION_BUILD_DIR = "$(SRCROOT)/uexApplePay";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EUExApplePay/sourceCode",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/EUExApplePay/sourceCode/UPApplePay",

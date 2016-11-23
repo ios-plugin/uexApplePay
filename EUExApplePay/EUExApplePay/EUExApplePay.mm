@@ -23,11 +23,9 @@
 
 #import "EUExApplePay.h"
 #import <PassKit/PassKit.h>
-#import "EUtility.h"
-#import "JSON.h"
 #import "uexApplePayHelper.h"
-#import "uexApplePayQueueLock.h"
 #import <Security/Security.h>
+#import <AppCanKit/ACEXTScope.h>
 #import "UPAPayPlugin.h"
 
 
@@ -49,10 +47,21 @@ typedef NS_ENUM(NSInteger,uexApplePayOnPayFinishResult){
 
 @property (nonatomic,strong) NSArray<PKPaymentSummaryItem *> *items;
 @property (nonatomic,strong) NSArray<PKShippingMethod *> *shippingMethods;
-@property (nonatomic,assign) PKPaymentAuthorizationStatus status;
-@property (nonatomic,assign) BOOL isPostalAddressInvalid;
+
+
 @property (nonatomic,strong) NSMutableDictionary<NSString *,PKPaymentButton *> *buttons;
 @property (nonatomic,assign) uexApplePayOnPayFinishResult payResult;
+
+
+
+
+@property (nonatomic,strong) void (^onAuthorizationHandler)(PKPaymentAuthorizationStatus);
+@property (nonatomic,strong) void (^didSelectShippingContactHandler)(PKPaymentAuthorizationStatus, NSArray<PKShippingMethod *> * _Nonnull, NSArray<PKPaymentSummaryItem *> * _Nonnull);
+@property (nonatomic,strong) void (^didSelectShippingMethodHandler)(PKPaymentAuthorizationStatus, NSArray<PKPaymentSummaryItem *> * _Nonnull);
+@property (nonatomic,strong) void (^didSelectPaymentMethodHandler)(NSArray<PKPaymentSummaryItem *> *);
+
+
+
 @end
 
 NSString * kUexApplePayOrderInfoKey = @"orderInfo";
@@ -70,39 +79,54 @@ typedef NS_ENUM(NSInteger,uexApplePayCommitType) {
 
 @implementation EUExApplePay
 
-static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingContactLock,*authorizationLock;
+
 
 #pragma mark - Life Cycle
 
-+ (void)initialize{
 
-    if ([self class] == [EUExApplePay class]) {
-        paymentMethodLock = [[uexApplePayQueueLock alloc]initWithIdentifier:@"uexApplePayPaymentMethodLock"];
-        shippingMethodLock = [[uexApplePayQueueLock alloc]initWithIdentifier:@"uexApplePayShippingMethodLockLock"];
-        shippingContactLock = [[uexApplePayQueueLock alloc]initWithIdentifier:@"uexApplePayShippingContactLockLock"];
-        authorizationLock = [[uexApplePayQueueLock alloc]initWithIdentifier:@"uexApplePayAuthorizationLockLock"];
-    }
-}
 
-- (instancetype)initWithBrwView:(EBrowserView *)eInBrwView{
-    self=[super initWithBrwView:eInBrwView];
-    if(self){
-        
+- (instancetype)initWithWebViewEngine:(id<AppCanWebViewEngineObject>)engine
+{
+    self = [super initWithWebViewEngine:engine];
+    if (self) {
+    
     }
     return self;
 }
 
-- (void)reset{
+- (void)clean{
+    [self reset];
+    for (PKPaymentButton *button in self.buttons.allValues) {
+        [button removeFromSuperview];
+    }
+    [self.buttons removeAllObjects];
+    
+}
 
+- (void)reset{
+    self.payResult = uexApplePayOnPayFinishResultCancel;
+    if (self.onAuthorizationHandler) {
+        self.onAuthorizationHandler(PKPaymentAuthorizationStatusFailure);
+        self.onAuthorizationHandler = nil;
+    }
+    if (self.didSelectPaymentMethodHandler) {
+        self.didSelectPaymentMethodHandler = nil;
+    }
+    if (self.didSelectShippingMethodHandler) {
+        self.didSelectShippingMethodHandler(PKPaymentAuthorizationStatusFailure,self.items);
+        self.didSelectShippingMethodHandler = nil;
+    }
+    if (self.didSelectShippingContactHandler) {
+        self.didSelectShippingContactHandler(PKPaymentAuthorizationStatusFailure,self.shippingMethods,self.items);
+        self.didSelectShippingContactHandler = nil;
+    }
     self.items = nil;
     self.shippingMethods = nil;
-    self.status = PKPaymentAuthorizationStatusSuccess;
-    self.isPostalAddressInvalid = NO;
-    self.payResult = uexApplePayOnPayFinishResultCancel;
+    
 }
 
 - (void)dealloc{
-    [self reset];
+    [self clean];
     
 }
 
@@ -117,12 +141,10 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 #pragma mark - API
 #pragma mark - Check
 - (NSNumber *)canMakePayment:(NSMutableArray *)inArguments{
-    id info = nil;
-    if([inArguments count] > 0){
-        info = [inArguments[0] JSONValue];
-    }
+    ACArgsUnpack(NSDictionary *info) = inArguments;
     uexApplePayStatus status = [uexApplePayHelper payStatusWithInfo:info];
-    [self callbackJSONWithFunction:@"cbCanMakePayment" object:@{@"status":@(status)}];
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"cbCanMakePayment")
+                                          arguments:ACArgsPack(@{@"status":@(status)}.ac_JSONFragment)];
     return @(status);
 }
 
@@ -130,43 +152,48 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 
 
 - (NSNumber *)startChinaUnionPay:(NSMutableArray *)inArguments{
-    if([inArguments count] < 1){
-        return [self cbStartChinaUnionPay:uexApplePayStartPayResultParameterError];
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbStartChinaUnionPay:uexApplePayStartPayResultParameterError];
-    }
+    
+    __block uexApplePayStartPayResult result = uexApplePayStartPayResultParameterError;
+    
+    @onExit{
+        [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"cbStartChinaUnionPay")
+                                              arguments:ACArgsPack(@{kUexApplePayResultKey:@(result)}.ac_JSONFragment)];
+    };
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    
     if ([uexApplePayHelper payStatusWithInfo:@{kUexApplePayNetworksKey:@[@"ChinaUnionPay"]}] != uexApplePayStatusAvailable) {
-        return [self cbStartChinaUnionPay:uexApplePayStartPayResultPaymentNotAvailable];
-    }
-    if(!UEX_DICT_CONTAIN_STRING_VALUE(info, kUexApplePayMerchantIdentifierKey) ||
-       !UEX_DICT_CONTAIN_STRING_VALUE(info, kUexApplePayOrderInfoKey) ||
-       !UEX_DICT_CONTAIN_STRING_VALUE(info, kUexApplePayModeKey)){
-        return [self cbStartChinaUnionPay:uexApplePayStartPayResultParameterError];
+        result = uexApplePayStartPayResultPaymentNotAvailable;
+        return @(result);
     }
     
+    NSString *orderInfo = stringArg(info[kUexApplePayOrderInfoKey]);
+    NSString *mode = stringArg(info[kUexApplePayModeKey]);
+    NSString *merchant = stringArg(info[kUexApplePayMerchantIdentifierKey]);
     
-    
-    BOOL isSuccess = [UPAPayPlugin startPay:info[kUexApplePayOrderInfoKey] mode:info[kUexApplePayModeKey] viewController:[EUtility brwCtrl:self.meBrwView] delegate:self andAPMechantID:info[kUexApplePayMerchantIdentifierKey]];
-    if (!isSuccess) {
-        return [self cbStartChinaUnionPay:uexApplePayStartPayResultUnknownError];
+    UEX_PARAM_GUARD_NOT_NIL(orderInfo,@(result));
+    UEX_PARAM_GUARD_NOT_NIL(mode,@(result));
+    UEX_PARAM_GUARD_NOT_NIL(merchant,@(result));
+
+
+    BOOL isSuccess = [UPAPayPlugin startPay:orderInfo mode:mode viewController:[self.webViewEngine viewController] delegate:self andAPMechantID:merchant];
+    if (isSuccess) {
+        result = uexApplePayStartPayResultSuccess;
+    }else{
+        result = uexApplePayStartPayResultUnknownError;
     }
-    return [self cbStartChinaUnionPay:uexApplePayStartPayResultSuccess];
+    return @(result);
     
 }
 
-- (NSNumber *)cbStartChinaUnionPay:(uexApplePayStartPayResult)result{
-    [self callbackJSONWithFunction:@"cbStartChinaUnionPay" object:@{kUexApplePayResultKey:@(result)}];
-    return @(result);
-}
+
 
 -(void) UPAPayPluginResult:(UPPayResult *) payResult{
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
     [dict setValue:@(payResult.paymentResultStatus) forKey:kUexApplePayResultKey];
     [dict setValue:payResult.errorDescription forKey:@"errorInfo"];
     [dict setValue:payResult.otherInfo forKey:@"otherInfo"];
-    [self callbackJSONWithFunction:@"onChinaUnionPayFinish" object:dict];
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onChinaUnionPayFinish")
+                                          arguments:ACArgsPack(dict.ac_JSONFragment)];
 }
 #pragma mark - Apple Pay
 
@@ -174,239 +201,215 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 
 - (NSNumber *)startPay:(NSMutableArray *)inArguments{
     [self reset];
-    if([inArguments count] < 1){
-        return [self cbStartPay:uexApplePayStartPayResultParameterError];
+    __block uexApplePayStartPayResult result = uexApplePayStartPayResultParameterError;
+    
+    @onExit{
+        [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"cbStartPay")
+                                              arguments:ACArgsPack(@{kUexApplePayResultKey:@(result)}.ac_JSONFragment)];
+    };
+
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    
+    if (!info) {
+        return @(result);
     }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbStartPay:uexApplePayStartPayResultParameterError];
-    }
-    if ([uexApplePayHelper payStatusWithInfo:info] != uexApplePayStatusAvailable) {
-        return [self cbStartPay:uexApplePayStartPayResultPaymentNotAvailable];
-    }
+    
     PKPaymentRequest *request = [uexApplePayHelper requestWithInfoDictionary:info];
     if (!request) {
-        return [self cbStartPay:uexApplePayStartPayResultParameterError];
+        return @(result);
+    }
+    if ([uexApplePayHelper payStatusWithInfo:info] != uexApplePayStatusAvailable) {
+        result = uexApplePayStartPayResultPaymentNotAvailable;
+        return @(result);
     }
     PKPaymentAuthorizationViewController *viewController = [[PKPaymentAuthorizationViewController alloc]initWithPaymentRequest:request];
     viewController.delegate = self;
     self.items = request.paymentSummaryItems;
     self.shippingMethods = request.shippingMethods;
-    UIViewController *meBrowserController = [EUtility brwCtrl:self.meBrwView];
-    
-    [meBrowserController presentViewController:viewController animated:YES completion:^{
-        
-    }];
-    return [self cbStartPay:uexApplePayStartPayResultSuccess];
-    
-}
-
-- (NSNumber *)cbStartPay:(uexApplePayStartPayResult)result{
-    [self callbackJSONWithFunction:@"cbStartPay" object:@{kUexApplePayResultKey:@(result)}];
+    [[self.webViewEngine viewController]presentViewController:viewController animated:YES completion:nil];
+    result = uexApplePayStartPayResultSuccess;
     return @(result);
+
 }
 
-- (NSNumber *)commitAuthorizedResult:(NSMutableArray *)inArguments{
-    uexApplePayCommitType type = uexApplePayCommitAuthorizedResult;
-    if([inArguments count] < 1){
-        return [self cbCommitWithResult:NO commitType:type];
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbCommitWithResult:NO commitType:type];
-    }
-    if (!info[kUexApplePayResultKey]) {
-        return [self cbCommitWithResult:NO commitType:type];
-    }
-    BOOL isPaymentSuccess = [info[kUexApplePayResultKey] boolValue];
+
+- (void)onCommitErrorWithType:(uexApplePayCommitType)type{
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onCommitError")
+                                          arguments:ACArgsPack(@{@"type":@(type)}.ac_JSONFragment)];
+}
+
+
+- (UEX_BOOL)commitAuthorizedResult:(NSMutableArray *)inArguments{
+    __block BOOL result = NO;
+    
+    @onExit{
+        if (!result) {
+            [self onCommitErrorWithType:uexApplePayCommitAuthorizedResult];
+        }
+    };
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    NSNumber *authorizedResult = numberArg(info[kUexApplePayResultKey]);
+    UEX_PARAM_GUARD_NOT_NIL(authorizedResult,UEX_FALSE);
+    
+    BOOL isPaymentSuccess = [authorizedResult boolValue];
+    PKPaymentAuthorizationStatus status;
     if (isPaymentSuccess) {
-        self.status = PKPaymentAuthorizationStatusSuccess;
+        status = PKPaymentAuthorizationStatusSuccess;
         self.payResult = uexApplePayOnPayFinishResultSuccess;
     }else{
-        self.status = PKPaymentAuthorizationStatusFailure;
+        status = PKPaymentAuthorizationStatusFailure;
         self.payResult = uexApplePayOnPayFinishResultFailure;
     }
-
-    return [self cbCommitWithResult:YES commitType:uexApplePayCommitAuthorizedResult];
     
+    self.onAuthorizationHandler(status);
+    self.onAuthorizationHandler = nil;
+    result = YES;
+    return UEX_TRUE;
 }
 
-- (NSNumber *)commitPaymentMethodChange:(NSMutableArray *)inArguments{
-    uexApplePayCommitType type = uexApplePayCommitPaymentMethodChange;
-    if([inArguments count] < 1){
-        return [self cbCommitWithResult:YES commitType:type];;
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbCommitWithResult:YES commitType:type];
-    }
-    if (info[kUexApplePayPaymentKey]) {
-         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return [self cbCommitWithResult:NO commitType:type];
+- (UEX_BOOL)commitPaymentMethodChange:(NSMutableArray *)inArguments{
+    __block BOOL result = NO;
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    @onExit{
+        if (!result) {
+            [self onCommitErrorWithType:uexApplePayCommitPaymentMethodChange];
         }
-    }
-    return [self cbCommitWithResult:YES commitType:type];
-}
-
-- (NSNumber *)commitShippingMethodChange:(NSMutableArray *)inArguments{
-    uexApplePayCommitType type = uexApplePayCommitShippingMethodChange;
-    if([inArguments count] < 1){
-        return [self cbCommitWithResult:YES commitType:type];;
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbCommitWithResult:YES commitType:type];
-    }
-    if (info[kUexApplePayPaymentKey]) {
+    };
+    
+    if (info && info[kUexApplePayPaymentKey]) {
         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return [self cbCommitWithResult:NO commitType:type];
-        }
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
     }
-    return [self cbCommitWithResult:YES commitType:type];
+    result = YES;
+    self.didSelectPaymentMethodHandler(self.items);
+    self.didSelectPaymentMethodHandler = nil;
+    return UEX_TRUE;
+}
+
+- (UEX_BOOL)commitShippingMethodChange:(NSMutableArray *)inArguments{
+    
+    __block BOOL result = NO;
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    @onExit{
+        if (!result) {
+            [self onCommitErrorWithType:uexApplePayCommitShippingMethodChange];
+        }
+    };
+    
+    if (info && info[kUexApplePayPaymentKey]) {
+        NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
+    }
+    result = YES;
+    self.didSelectShippingMethodHandler(PKPaymentAuthorizationStatusSuccess,self.items);
+    self.didSelectShippingMethodHandler = nil;
+    return UEX_TRUE;
 }
 
 - (NSNumber *)commitShippingContactChange:(NSMutableArray *)inArguments{
-    uexApplePayCommitType type = uexApplePayCommitShippingContactChange;
-    if([inArguments count] < 1){
-        return [self cbCommitWithResult:YES commitType:type];;
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbCommitWithResult:YES commitType:type];
-    }
+
+    __block BOOL result = NO;
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    @onExit{
+        if (!result) {
+            [self onCommitErrorWithType:uexApplePayCommitShippingContactChange];
+        }
+    };
+    PKPaymentAuthorizationStatus status = PKPaymentAuthorizationStatusSuccess;
     if (info[kUexApplePayIsPostalAddressInvalidKey] && [info[kUexApplePayIsPostalAddressInvalidKey] boolValue]) {
-        self.isPostalAddressInvalid = YES;
+        status = PKPaymentAuthorizationStatusInvalidShippingPostalAddress;
     }
     
     if (info[kUexApplePayPaymentKey]) {
         NSArray<PKPaymentSummaryItem *> *items = [uexApplePayHelper itemsWithInfoDictionary:info];
-        if (items) {
-            self.items = items;
-        }else{
-            return [self cbCommitWithResult:NO commitType:type];
-        }
+        UEX_PARAM_GUARD_NOT_NIL(items,UEX_FALSE);
+        self.items = items;
     }
     if (info[kUexApplePayShippingMethodsKey]) {
         NSArray<PKShippingMethod *> *shippingMethods = [uexApplePayHelper shippingMethodsWithInfoDictionary:info];
-        if (shippingMethods) {
-            self.shippingMethods = shippingMethods;
-        }else{
-            return [self cbCommitWithResult:NO commitType:type];
-        }
-    }
-    return [self cbCommitWithResult:YES commitType:type];
-}
+        UEX_PARAM_GUARD_NOT_NIL(shippingMethods,UEX_FALSE);
+        self.shippingMethods = shippingMethods;
 
-- (NSNumber *)cbCommitWithResult:(BOOL)result commitType:(uexApplePayCommitType)commitType{
-    uexApplePayQueueLock *lock;
-    switch (commitType) {
-        case uexApplePayCommitAuthorizedResult: {
-            lock = authorizationLock;
-            break;
-        }
-        case uexApplePayCommitShippingMethodChange: {
-            lock = shippingMethodLock;
-            break;
-        }
-        case uexApplePayCommitPaymentMethodChange: {
-            lock = paymentMethodLock;
-            break;
-        }
-        case uexApplePayCommitShippingContactChange: {
-            lock = shippingContactLock;
-            break;
-        }
     }
-    
-    if (result) {
-        [lock unlock];
-    }else{
-        [self callbackJSONWithFunction:@"onCommitError" object:@{@"type":@(commitType)}];
-    }
-    return @(result);
+    result = YES;
+    self.didSelectShippingContactHandler(status,self.shippingMethods,self.items);
+    self.didSelectShippingContactHandler = nil;
+    return UEX_TRUE;
 }
 
 
 #pragma mark - Apple Pay Button
 
+- (UEX_BOOL)addButton:(NSMutableArray *)inArguments{
+    __block BOOL result = NO;
+    __block NSString *identifier = nil;
+    @onExit{
+        identifier = identifier?:@"";
+        NSDictionary *dict = @{@"result":@(result),@"id":identifier};
+        [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"cbAddButton")
+                                              arguments:ACArgsPack(dict.ac_JSONFragment)];
 
-
-
-- (NSNumber *)addButton:(NSMutableArray *)inArguments{
-
-    if([inArguments count] < 1){
-        return [self cbAddButtonWithResult:NO identifier:nil];
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbAddButtonWithResult:NO identifier:nil];
-    }
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(info, @"id") || !info[@"width"] || !info[@"height"] || !info[@"x"] || !info[@"y"]) {
-        return [self cbAddButtonWithResult:NO identifier:nil];
-    }
-    NSString *identifier = info[@"id"];
+    };
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    identifier = stringArg(info[@"id"]);
+    NSNumber *width = numberArg(info[@"width"]);
+    NSNumber *height = numberArg(info[@"height"]);
+    NSNumber *x = numberArg(info[@"x"]);
+    NSNumber *y = numberArg(info[@"y"]);
+    UEX_PARAM_GUARD_NOT_NIL(identifier,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(width,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(height,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(x,UEX_FALSE);
+    UEX_PARAM_GUARD_NOT_NIL(y,UEX_FALSE);
     if ([self.buttons.allKeys containsObject:identifier]) {
-        return [self cbAddButtonWithResult:NO identifier:identifier];
+        ACLogDebug(@"id already used!");
+        return UEX_FALSE;
     }
     PKPaymentButtonType type = (PKPaymentButtonType)(info[@"type"] ? [info[@"type"] integerValue] : PKPaymentButtonTypePlain);
     PKPaymentButtonStyle style = (PKPaymentButtonStyle)(info[@"style"] ? [info[@"style"] integerValue] : PKPaymentButtonStyleBlack);
     PKPaymentButton *button = [PKPaymentButton buttonWithType:type style:style];
-    button.frame = CGRectMake([info[@"x"] floatValue], [info[@"y"] floatValue], [info[@"width"] floatValue], [info[@"height"] floatValue]);
+    button.frame = CGRectMake(x.floatValue, y.floatValue, width.floatValue, height.floatValue);
     [self.buttons setValue:button forKey:identifier];
     [button addTarget:self action:@selector(onButtonClick:) forControlEvents:UIControlEventTouchUpInside];
     BOOL isScroll = info[@"scrollWithWeb"] ? [info[@"scrollWithWeb"] boolValue] : NO;
     if (isScroll) {
-        [EUtility brwView:self.meBrwView addSubviewToScrollView:button];
+        [[self.webViewEngine webScrollView] addSubview:button];
+
     }else{
-        [EUtility brwView:self.meBrwView addSubview:button];
+        [[self.webViewEngine webView] addSubview:button];
+
     }
-    return [self cbAddButtonWithResult:YES identifier:identifier];
+    result = YES;
+    return UEX_TRUE;
 }
 
-- (NSNumber *)cbAddButtonWithResult:(BOOL)isSuccess identifier:(NSString *)identifier{
-    NSMutableDictionary *result = [NSMutableDictionary dictionary];
-    [result setValue:@(isSuccess) forKey:@"cbAddButton"];
-    [result setValue:identifier?:@"" forKey:@"id"];
-    [self callbackJSONWithFunction:@"cbAddButton" object:result];
-    return @(isSuccess);
-}
 
-- (NSNumber *)removeButton:(NSMutableArray *)inArguments{
-    if([inArguments count] < 1){
-        return [self cbRemoveButtonWithResult:NO identifier:nil];
-    }
-    id info = [inArguments[0] JSONValue];
-    if(!info || ![info isKindOfClass:[NSDictionary class]]){
-        return [self cbRemoveButtonWithResult:NO identifier:nil];
-    }
-    if (!UEX_DICT_CONTAIN_STRING_VALUE(info, @"id")) {
-        return [self cbRemoveButtonWithResult:NO identifier:nil];
-    }
-    NSString *identifier = info[@"id"];
-    if (!self.buttons[identifier]) {
-        return [self cbRemoveButtonWithResult:NO identifier:identifier];
-    }
-    PKPaymentButton *button = self.buttons[identifier];
+- (UEX_BOOL)removeButton:(NSMutableArray *)inArguments{
     
+    __block BOOL result = NO;
+    __block NSString *identifier = nil;
+    @onExit{
+        identifier = identifier?:@"";
+        NSDictionary *dict = @{@"result":@(result),@"id":identifier};
+        [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"cbRemoveButton")
+                                              arguments:ACArgsPack(dict.ac_JSONFragment)];
+        
+    };
+    
+    ACArgsUnpack(NSDictionary *info) = inArguments;
+    identifier = stringArg(info[@"id"]);
+    UEX_PARAM_GUARD_NOT_NIL(identifier,UEX_FALSE);
+    PKPaymentButton *button = self.buttons[identifier];
     [button removeFromSuperview];
     [self.buttons removeObjectForKey:identifier];
-    return [self cbRemoveButtonWithResult:YES identifier:identifier];;
+    result = YES;
+    return UEX_TRUE;
 }
 
 
-- (NSNumber *)cbRemoveButtonWithResult:(BOOL)isSuccess identifier:(NSString *)identifier{
-    NSMutableDictionary *result = [NSMutableDictionary dictionary];
-    [result setValue:@(isSuccess) forKey:@"cbAddButton"];
-    [result setValue:identifier?:@"" forKey:@"id"];
-    [self callbackJSONWithFunction:@"cbRemoveButton" object:result];
-    return @(isSuccess);
-}
+
 
 - (void)onButtonClick:(id)sender{
     if (![sender isKindOfClass:[PKPaymentButton class]]) {
@@ -414,7 +417,8 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
     }
     [self.buttons enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, PKPaymentButton * _Nonnull obj, BOOL * _Nonnull stop) {
         if (obj == sender) {
-            [self callbackJSONWithFunction:@"onButtonClick" object:@{@"id":key}];
+            [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onButtonClick")
+                                                  arguments:ACArgsPack(@{@"id":key}.ac_JSONFragment)];
             *stop = YES;
         }
     }];
@@ -429,17 +433,15 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 - (void)paymentAuthorizationViewController:(PKPaymentAuthorizationViewController *)controller
                        didAuthorizePayment:(PKPayment *)payment
                                 completion:(void (^)(PKPaymentAuthorizationStatus status))completion{
-    [authorizationLock lock];
-    [self callbackJSONWithFunction:@"onPaymentAuthorized" object:[uexApplePayHelper paymentInfo:payment]];
-    [authorizationLock addTask:^{
-        completion(self.status);
-    }];
-    
+
+    self.onAuthorizationHandler = completion;
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onPaymentAuthorized")
+                                          arguments:ACArgsPack([uexApplePayHelper paymentInfo:payment].ac_JSONFragment)];
 }
 - (void)paymentAuthorizationViewControllerDidFinish:(PKPaymentAuthorizationViewController *)controller{
     [controller dismissViewControllerAnimated:YES completion:^{
-        
-        [self callbackJSONWithFunction:@"onPayFinish" object:@{@"result":@(self.payResult)}];
+        [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onPayFinish")
+                                              arguments:ACArgsPack(@{@"result":@(self.payResult)}.ac_JSONFragment)];
         [self reset];
     }];
      
@@ -449,52 +451,36 @@ static uexApplePayQueueLock *paymentMethodLock,*shippingMethodLock,*shippingCont
 - (void)paymentAuthorizationViewController:(PKPaymentAuthorizationViewController *)controller
                   didSelectShippingContact:(PKContact *)contact
                                 completion:(void (^)(PKPaymentAuthorizationStatus, NSArray<PKShippingMethod *> * _Nonnull, NSArray<PKPaymentSummaryItem *> * _Nonnull))completion{
-    self.isPostalAddressInvalid = NO;
-    [shippingContactLock lock];
-    [self callbackJSONWithFunction:@"onShippingContactChange" object:[uexApplePayHelper contactInfo:contact]];
-    [shippingContactLock addTask:^{
-        PKPaymentAuthorizationStatus status = PKPaymentAuthorizationStatusSuccess;
-        if (self.isPostalAddressInvalid) {
-            status = PKPaymentAuthorizationStatusInvalidShippingPostalAddress;
-        }
-        completion(status,self.shippingMethods ,self.items);
-    }];
+    self.didSelectShippingContactHandler = completion;
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onShippingContactChange")
+                                          arguments:ACArgsPack([uexApplePayHelper contactInfo:contact].ac_JSONFragment)];
+
 }
 
 - (void)paymentAuthorizationViewController:(PKPaymentAuthorizationViewController *)controller
                    didSelectShippingMethod:(PKShippingMethod *)shippingMethod
                                 completion:(void (^)(PKPaymentAuthorizationStatus, NSArray<PKPaymentSummaryItem *> * _Nonnull))completion{
-    [shippingMethodLock lock];
-    [self callbackJSONWithFunction:@"onShippingMethodChange" object:[uexApplePayHelper shippingMethodInfo:shippingMethod]];
-    [shippingMethodLock addTask:^{
-        completion(PKPaymentAuthorizationStatusSuccess,self.items);
-    }];
-    
-    
+    self.didSelectShippingMethodHandler = completion;
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onShippingMethodChange")
+                                          arguments:ACArgsPack([uexApplePayHelper shippingMethodInfo:shippingMethod].ac_JSONFragment)];
 }
 
 - (void)paymentAuthorizationViewController:(PKPaymentAuthorizationViewController *)controller
                     didSelectPaymentMethod:(PKPaymentMethod *)paymentMethod
                                 completion:(void (^)(NSArray<PKPaymentSummaryItem *> *summaryItems))completion{
-    [paymentMethodLock lock];
-    [self callbackJSONWithFunction:@"onPaymentMethodChange" object:[uexApplePayHelper paymentMethodInfo:paymentMethod]];
-    [paymentMethodLock addTask:^{
-        completion(self.items);
-    }];
+    self.didSelectPaymentMethodHandler = completion;
+    [self.webViewEngine callbackWithFunctionKeyPath:uexApplePayFuncName(@"onPaymentMethodChange")
+                                          arguments:ACArgsPack([uexApplePayHelper paymentMethodInfo:paymentMethod].ac_JSONFragment)];
+
 
 }
 
 
 #pragma mark - JSON Callback
 
-- (void)callbackJSONWithFunction:(NSString *)functionName object:(id)object{
-
-    [EUtility uexPlugin:@"uexApplePay"
-         callbackByName:functionName
-             withObject:object
-                andType:uexPluginCallbackWithJsonString
-               inTarget:self.meBrwView];
-    
+static inline NSString * uexApplePayFuncName(NSString *name){
+    return [NSString stringWithFormat:@"uexApplePay.%@",name];
 }
+
 
 @end
